@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f3fbf">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Libreta">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f3fbf'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3E$%3C/text%3E%3C/svg%3E">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Libreta de Pagos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una sola columna tipo libreta de bolsillo; captura por voz arriba, luego el mes, lo que viene y el historial. */
+:root{
+  --bg:#f3f2ee; --paper:#ffffff; --ink:#1d1f2b; --muted:#646779; --line:#dddbd3;
+  --accent:#2f3fbf; --accent-ink:#ffffff; --accent-soft:#e6e8fb;
+  --good:#1f7a4d; --good-soft:#dff2e7; --warn:#a35a00; --warn-soft:#fbecd6; --bad:#b3261e; --bad-soft:#fbe0dd;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --f-num:"DM Mono",ui-monospace,Menlo,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#13141b; --paper:#1c1e28; --ink:#ecebf3; --muted:#9a9cb0; --line:#2e3040;
+  --accent:#8b97ff; --accent-ink:#11132a; --accent-soft:#262b52;
+  --good:#5fd29a; --good-soft:#163527; --warn:#f0b35e; --warn-soft:#3a2a12; --bad:#ff8a80; --bad-soft:#3d1a18; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13141b; --paper:#1c1e28; --ink:#ecebf3; --muted:#9a9cb0; --line:#2e3040;
+  --accent:#8b97ff; --accent-ink:#11132a; --accent-soft:#262b52;
+  --good:#5fd29a; --good-soft:#163527; --warn:#f0b35e; --warn-soft:#3a2a12; --bad:#ff8a80; --bad-soft:#3d1a18; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:22px}
+h1,h2{font-family:var(--f-display);margin:0;text-wrap:balance}
+h1{font-size:28px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:18px;font-weight:700}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.monthnav{display:flex;align-items:center;gap:6px}
+button{font:inherit;cursor:pointer;color:inherit}
+.iconbtn{background:var(--paper);border:1px solid var(--line);border-radius:10px;width:34px;height:34px}
+.banner{background:var(--warn-soft);color:var(--warn);padding:10px 12px;border-radius:10px;font-size:13px}
+section{display:grid;gap:12px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:12px;min-width:0}
+/* captura */
+.capture{background:var(--accent);color:var(--accent-ink);border:0}
+.capture .eyebrow{color:inherit;opacity:.8}
+.cap-row{display:flex;gap:12px;align-items:center}
+.mic{flex:none;width:64px;height:64px;border-radius:50%;border:0;background:var(--accent-ink);color:var(--accent);display:grid;place-items:center;transition:transform .15s}
+.mic svg{width:28px;height:28px}
+.mic.on{animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.55)}100%{box-shadow:0 0 0 18px rgba(255,255,255,0)}}
+@media (prefers-reduced-motion:reduce){.mic.on{animation:none;outline:3px solid var(--accent-ink);outline-offset:4px}}
+.cap-text{flex:1;min-width:0;display:grid;gap:8px}
+.cap-text textarea{width:100%;box-sizing:border-box;border:0;border-radius:10px;padding:10px 12px;font:inherit;resize:none;min-height:48px;background:var(--paper);color:var(--ink)}
+.cap-hint{font-size:13px;opacity:.85}
+.cap-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border-radius:10px;padding:9px 14px;border:1px solid var(--line);background:var(--paper);font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.capture .btn.primary{background:var(--accent-ink);color:var(--accent);border-color:var(--accent-ink)}
+.capture .btn.ghost{background:transparent;color:var(--accent-ink);border-color:currentColor}
+.btn:focus-visible,.mic:focus-visible,.iconbtn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.examples{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;border-radius:999px;padding:4px 10px;border:1px solid currentColor;background:transparent;opacity:.9}
+/* borrador */
+.draft{border:2px solid var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:440px){.grid2{grid-template-columns:1fr}}
+label.f{display:grid;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+label.f input,label.f select{font:15px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0;width:100%;box-sizing:border-box}
+label.f input.money{font-family:var(--f-num);font-size:18px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.check{display:flex;gap:8px;align-items:center;font-size:14px}
+.note{font-size:13px;color:var(--muted)}
+.note.ai{color:var(--accent)}
+.match{background:var(--good-soft);color:var(--good);border-radius:10px;padding:10px 12px;font-size:14px}
+/* resumen */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:440px){.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:2px;min-width:0}
+.stat .v{font-size:19px;font-weight:500;overflow-wrap:anywhere}
+.stat .l{font-size:12px;color:var(--muted)}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:14px}
+.bar .track{grid-column:1/-1;height:8px;border-radius:4px;background:var(--bg);overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:4px}
+/* listas */
+.list{display:grid}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
+.row:first-child{border-top:0}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.row .s{font-size:12px;color:var(--muted);grid-column:1}
+.row .amt{text-align:right}
+.amt.out{color:var(--ink)} .amt.in{color:var(--good)}
+.pill{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;letter-spacing:.02em}
+.pill.pend{background:var(--bad-soft);color:var(--bad)} .pill.ok{background:var(--good-soft);color:var(--good)} .pill.soon{background:var(--warn-soft);color:var(--warn)}
+.rowbtn{all:unset;display:contents;cursor:pointer}
+.rowact{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;padding-top:6px}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+.addform{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end}
+@media (max-width:520px){.addform{grid-template-columns:1fr 1fr}.addform .wide{grid-column:1/-1}}
+.advice{white-space:pre-wrap;font-size:14px;line-height:1.6}
+.foot{display:flex;gap:8px;flex-wrap:wrap}
+.ledger-wrap{overflow-x:auto}
+.ledger{width:100%;border-collapse:collapse;font-size:14px}
+.ledger td{padding:7px 0;border-top:1px solid var(--line);vertical-align:top}
+.ledger td:last-child{text-align:right;white-space:nowrap;padding-left:12px;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.ledger tr.h td{border-top:0;padding-top:14px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;font-family:var(--f-body);text-align:left!important}
+.ledger tr.sub td{font-weight:600;border-top:2px solid var(--ink)}
+.ledger tr.total td{font-family:var(--f-display);font-size:18px;font-weight:700;border-top:2px solid var(--ink);padding-top:10px}
+.ledger tr.total td:last-child{font-family:var(--f-num)}
+.ledger .pos{color:var(--good)} .ledger .neg{color:var(--bad)}
+.ledger .tag{font-size:11px;color:var(--muted);margin-left:6px;white-space:nowrap}
+.acts{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.sbtn{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:3px 10px;font-size:12px;font-weight:600}
+.sbtn.danger{color:var(--bad);border-color:var(--bad)}
+.row.off .t,.row.off .amt{color:var(--muted);text-decoration:line-through}
+</style>
+
+</head><body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Mis finanzas</div>
+      <h1>Libreta de Pagos</h1>
+    </div>
+    <div class="monthnav">
+      <button class="iconbtn" id="prevM" aria-label="Mes anterior">‹</button>
+      <span id="monthLabel" class="num" style="min-width:120px;text-align:center"></span>
+      <button class="iconbtn" id="nextM" aria-label="Mes siguiente">›</button>
+    </div>
+  </header>
+
+  <div class="banner" id="storeBanner" hidden></div>
+
+  <!-- CAPTURA -->
+  <section class="panel capture" aria-labelledby="capT">
+    <div class="eyebrow" id="capT">Dime qué pagaste</div>
+    <div class="cap-row">
+      <button class="mic" id="micBtn" aria-label="Hablar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <div class="cap-text">
+        <textarea id="said" rows="2" placeholder="Ej: pagué 45 mil de mercado con Nequi"></textarea>
+      </div>
+    </div>
+    <div class="cap-hint" id="micHint">Toca el micrófono y habla. Si tu celular no lo permite aquí, toca el cuadro de texto y usa el micrófono del teclado.</div>
+    <div class="cap-actions">
+      <button class="btn primary" id="parseBtn">Registrar</button>
+    </div>
+    <div class="examples" aria-label="Ejemplos">
+      <button class="chip" data-ex="Pagué 811 mil del mínimo de la tarjeta Davivienda con Bancolombia">Mínimo Davivienda</button>
+      <button class="chip" data-ex="Carolina me pagó 200 mil por Nequi">Carolina me pagó</button>
+      <button class="chip" data-ex="Mercado en el D1 por 62.500 en efectivo, compartido con Carolina">Mercado a medias</button>
+      <button class="chip" data-ex="Recibí 400 mil del ingreso extra en Bancolombia">Ingreso extra</button>
+    </div>
+  </section>
+
+  <!-- BORRADOR -->
+  <section class="panel draft" id="draft" hidden aria-labelledby="draftT">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap">
+      <h2 id="draftT">Revisa y guarda</h2>
+      <span class="note" id="aiNote"></span>
+    </div>
+    <div class="seg" id="tipoSeg" role="group" aria-label="Tipo">
+      <button data-v="gasto">Gasto</button>
+      <button data-v="tarjeta">Pago de tarjeta</button>
+      <button data-v="cobro">Me pagaron</button>
+      <button data-v="ingreso">Ingreso</button>
+    </div>
+    <div class="grid2">
+      <label class="f">Valor (COP)<input id="dValor" class="money" inputmode="numeric" autocomplete="off"></label>
+      <label class="f">Fecha<input id="dFecha" type="date"></label>
+    </div>
+    <label class="f">Descripción<input id="dDesc" autocomplete="off"></label>
+    <div class="grid2">
+      <label class="f">Categoría<select id="dCat"></select></label>
+      <label class="f">Medio de pago<select id="dMedio"></select></label>
+    </div>
+    <div class="grid2" id="personaRow">
+      <label class="check"><input type="checkbox" id="dComp"> Compartido 50/50</label>
+      <label class="f">Persona<select id="dPersona"><option value="">Nadie</option></select></label>
+    </div>
+    <div class="match" id="matchBox" hidden><label class="check"><input type="checkbox" id="dMatch" checked> <span id="matchText"></span></label></div>
+    <div class="cap-actions">
+      <button class="btn primary" id="saveBtn">Guardar</button>
+      <button class="btn" id="cancelBtn">Descartar</button>
+    </div>
+  </section>
+
+  <!-- BALANCE -->
+  <section aria-labelledby="balT">
+    <h2 id="balT">Lo que te queda</h2>
+    <div class="panel">
+      <div class="ledger-wrap"><table class="ledger" id="ledger"></table></div>
+      <div class="note">Ingresos fijos del mes menos tus deudas y pagos, y luego lo que has gastado. Lo que quitas de un mes o de la lista deja de contar aquí.</div>
+    </div>
+  </section>
+
+  <!-- RESUMEN -->
+  <section aria-labelledby="sumT">
+    <h2 id="sumT">Este mes</h2>
+    <div class="stats">
+      <div class="stat"><span class="l">Gastado</span><span class="v num" id="sGasto">—</span></div>
+      <div class="stat"><span class="l">Abonado a tarjetas</span><span class="v num" id="sTarj">—</span></div>
+      <div class="stat"><span class="l">Recibido</span><span class="v num" id="sIn">—</span></div>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Gastos por categoría</div>
+      <div class="bars" id="bars"></div>
+    </div>
+  </section>
+
+  <!-- INGRESOS FIJOS -->
+  <section aria-labelledby="fixT">
+    <h2 id="fixT">Ingresos fijos</h2>
+    <div class="panel">
+      <div class="note" id="fixSum"></div>
+      <div class="list" id="fixList"></div>
+      <details>
+        <summary class="note" style="cursor:pointer">Agregar un ingreso fijo</summary>
+        <form class="addform" id="fixForm" style="margin-top:10px">
+          <label class="f wide">Qué<input id="fNombre" required placeholder="Ej: Arriendo de la pieza"></label>
+          <label class="f">Valor<input id="fValor" inputmode="numeric" required></label>
+          <label class="f">Día del mes<input id="fDia" type="number" min="1" max="31" inputmode="numeric"></label>
+          <button class="btn primary" type="submit">Agregar</button>
+        </form>
+      </details>
+      <div class="note">"Quitar este mes" lo saca solo de este mes; "Eliminar" lo borra para siempre.</div>
+    </div>
+  </section>
+
+  <!-- PRÓXIMOS PAGOS -->
+  <section aria-labelledby="dueT">
+    <h2 id="dueT">Próximos pagos</h2>
+    <div class="panel">
+      <div class="list" id="dueList"></div>
+      <details>
+        <summary class="note" style="cursor:pointer">Agregar un pago por vencer</summary>
+        <form class="addform" id="dueForm" style="margin-top:10px">
+          <label class="f wide">Qué<input id="nNombre" required placeholder="Ej: Arriendo noviembre"></label>
+          <label class="f">Valor<input id="nValor" inputmode="numeric" required></label>
+          <label class="f">Vence<input id="nFecha" type="date"></label>
+          <button class="btn primary" type="submit">Agregar</button>
+        </form>
+      </details>
+    </div>
+  </section>
+
+  <!-- POR COBRAR -->
+  <section aria-labelledby="owedT">
+    <h2 id="owedT">Te deben</h2>
+    <div class="panel"><div class="list" id="owedList"></div>
+      <div class="note">Sube cuando registras un gasto compartido con esa persona. Baja cuando dices "Carolina me pagó…".</div>
+    </div>
+  </section>
+
+  <!-- MOVIMIENTOS -->
+  <section aria-labelledby="movT">
+    <h2 id="movT">Movimientos del mes</h2>
+    <div class="panel"><div class="list" id="movList"></div></div>
+  </section>
+
+  <!-- CONSEJO -->
+  <section aria-labelledby="advT" id="advSec">
+    <h2 id="advT">Consejos</h2>
+    <div class="panel">
+      <div class="advice" id="advice">La app revisa tu mes (ingresos, pagos pendientes, gastos y lo que te deben) y te dice qué priorizar.</div>
+      <div class="foot"><button class="btn primary" id="adviceBtn">Pedir consejo</button></div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <button class="btn" id="csvBtn">Descargar CSV para el Excel</button>
+    <button class="btn" id="bakBtn">Descargar respaldo</button>
+    <label class="btn" for="restFile" style="cursor:pointer">Restaurar respaldo</label><input type="file" id="restFile" accept=".json,application/json" hidden>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const fmt = new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0});
+const money = n => fmt.format(Math.round(n||0));
+
+const CATS = ["Tarjetas de crédito","Arriendo","Servicios del hogar","Crédito emprendimiento","Remesa","Mercado","Comida fuera","Transporte","Suscripciones","Entretenimiento","Salud","Cuidado personal","Préstamos","Ingresos","Otros"];
+const MEDIOS = ["Nequi","Efectivo","Bancolombia","Davivienda","RappiCard","Daviplata","Otro"];
+const TIPOS = {gasto:"Gasto",tarjeta:"Pago de tarjeta",cobro:"Me pagaron",ingreso:"Ingreso"};
+
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const today = () => iso(new Date());
+let viewMonth = today().slice(0,7);
+
+/* ---------------- estado ---------------- */
+const state = {movs:[], due:[], people:[], fixed:[]};
+let db = null, store = "memory";
+
+/* ---------------- parser local ---------------- */
+const strip = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const W = {cero:0,un:1,uno:1,una:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veintiun:21,veintiuno:21,veintidos:22,veintitres:23,veinticuatro:24,veinticinco:25,veintiseis:26,veintisiete:27,veintiocho:28,veintinueve:29,treinta:30,cuarenta:40,cincuenta:50,sesenta:60,setenta:70,ochenta:80,noventa:90,cien:100,ciento:100,doscientos:200,doscientas:200,trescientos:300,trescientas:300,cuatrocientos:400,cuatrocientas:400,quinientos:500,quinientas:500,seiscientos:600,seiscientas:600,setecientos:700,setecientas:700,ochocientos:800,ochocientas:800,novecientos:900,novecientas:900};
+const THOUS = new Set(["mil","lucas","luca","k"]);
+const MILL = new Set(["millon","millones","palo","palos","melon","melones"]);
+const DROP = new Set([...Object.keys(W).filter(k=>!["un","una"].includes(k)),...THOUS,...MILL,"pesos","pague","gaste","compre","registra","anota","registre","anote"]);
+function toNum(tok){
+  if (tok in W) return W[tok];
+  let t = tok.replace(/^\$/,"");
+  if (/^\d{1,3}([.,]\d{3})+$/.test(t)) return +t.replace(/[.,]/g,"");
+  if (/^\d+[.,]\d{1,2}$/.test(t)) return +t.replace(",",".");
+  if (/^\d+$/.test(t)) return +t;
+  return null;
+}
+function parseAmount(text){
+  const toks = strip(text).replace(/\$\s*/g,"$").replace(/(\d)k\b/g,"$1 k").split(/[^a-z0-9.,$]+/).map(t=>t.replace(/[.,]+$/,"")).filter(Boolean);
+  let best = 0, total = 0, cur = 0, inSeq = false;
+  const flush = () => { const v = total+cur; if (v>best) best=v; total=0; cur=0; inSeq=false; };
+  for (const t of toks){
+    const n = toNum(t);
+    if (n!==null){ cur += n; inSeq = true; continue; }
+    if (THOUS.has(t) && inSeq){ total += (cur||1)*1000; cur = 0; continue; }
+    if (t==="mil"){ total += 1000; inSeq = true; continue; }
+    if (MILL.has(t)){ total = (total+(cur||1))*1e6; cur = 0; inSeq = true; continue; }
+    if ((t==="y"||t==="de"||t==="pesos") && inSeq) continue;
+    if (inSeq) flush();
+  }
+  flush();
+  return Math.round(best);
+}
+const CAT_KW = [
+  ["Tarjetas de crédito",/tarjeta|minimo|rappicard|rappi card|extracto/],
+  ["Arriendo",/arriendo|alquiler/],
+  ["Servicios del hogar",/\bepm\b|internet|alcantarillado|asuac|\bluz\b|\bagua\b|\bgas\b|servicio|celular|plan de datos|claro|tigo|movistar/],
+  ["Crédito emprendimiento",/emprendimiento|credito/],
+  ["Remesa",/remesa/],
+  ["Mercado",/mercado|\bd1\b|\bara\b|exito|olimpica|carulla|supermercado|tienda|fruver|verdura/],
+  ["Comida fuera",/hamburguesa|granizado|restaurante|almuerzo|comida|pizza|domicilio|rappi(?!card| card)|cafe|empanada|papas|licor|cerveza|trago/],
+  ["Transporte",/bus|metro|taxi|uber|didi|indriver|gasolina|pasaje|transporte|moto|parqueadero|peaje/],
+  ["Suscripciones",/spotify|netflix|youtube|disney|prime|max\b|suscripcion|icloud/],
+  ["Entretenimiento",/boleta|concierto|evento|cine|fiesta|salida/],
+  ["Salud",/drogueria|medicina|medico|eps|cita|farmacia|odontolog/],
+  ["Cuidado personal",/peluqueria|ropa|zapatos|unas|maquillaje/],
+  ["Préstamos",/prestamo|presto|preste/],
+];
+const MEDIO_KW = [["Nequi",/nequi/],["Daviplata",/daviplata/],["Efectivo",/efectivo|cash|en plata/],["Bancolombia",/bancolombia/],["Davivienda",/davivienda/],["RappiCard",/rappicard|rappi card|tarjeta rappi/]];
+function parseLocal(text){
+  const s = strip(text);
+  const r = {valor: parseAmount(text), tipo:"gasto", categoria:"Otros", medio:"", persona:"", compartido:false, fecha: today(), descripcion:""};
+  const persona = state.people.find(p => s.includes(strip(p.nombre)));
+  if (persona) r.persona = persona.nombre;
+  if (persona && /(me (pago|pagaron|devolvio|transfirio|consigno|abono|dio)|(pago|abono|transfirio|consigno|devolvio)\b)/.test(s) && !/con (carolina|duvan)|compartid|medias|mitad/.test(s)) r.tipo = "cobro";
+  else if (/recibi|me llego|me entro|ingreso|sueldo|salario|quincena|nomina|me pagaron el/.test(s)) r.tipo = "ingreso";
+  else if (/tarjeta|minimo|rappicard|rappi card|extracto/.test(s)) r.tipo = "tarjeta";
+  if (/compartid|a medias|mitad|50.?50|con carolina|con duvan/.test(s) && r.tipo==="gasto"){ r.compartido = true; if(!r.persona) r.persona = (state.people[0]||{}).nombre||""; }
+  if (r.tipo==="cobro") r.categoria = "Préstamos";
+  else if (r.tipo==="ingreso") r.categoria = "Ingresos";
+  else for (const [c,re] of CAT_KW) if (re.test(s)){ r.categoria = c; break; }
+  // medio: lo que va después de "con/desde/por/en" gana; si es pago de tarjeta, la tarjeta no es el medio
+  const after = s.match(/(?:con|desde|por|en|de mi|de la cuenta)\s+(?:mi\s+|la\s+|el\s+)?(nequi|daviplata|efectivo|bancolombia|davivienda|rappi ?card)/g);
+  if (after){ const last = after[after.length-1]; for (const [m,re] of MEDIO_KW) if (re.test(last)) { r.medio = m; } }
+  if (!r.medio) for (const [m,re] of MEDIO_KW) if (re.test(s)){ if (r.tipo==="tarjeta" && new RegExp("tarjeta\\s+(de\\s+)?"+re.source).test(s)) continue; r.medio = m; break; }
+  if (/\bayer\b/.test(s)){ const d=new Date(); d.setDate(d.getDate()-1); r.fecha = iso(d); }
+  const keep = []; let prevDropped = false;
+  const words = text.split(/\s+/);
+  for (let i=0;i<words.length;i++){
+    const w = words[i], b = strip(w).replace(/[^a-z0-9$.,]/g,""), core = b.replace(/[.,$]/g,"");
+    const next = strip(words[i+1]||"").replace(/[^a-z]/g,"");
+    const drop = /^\$?\d[\d.,]*k?$/.test(b) || DROP.has(core) || ((core==="un"||core==="una") && (THOUS.has(next)||MILL.has(next))) || (core==="y" && prevDropped) || (core==="de" && prevDropped && keep.length===0);
+    if (!drop) keep.push(w); prevDropped = drop;
+  }
+  while (keep.length && /^(de|del|por|en|el|la)$/i.test(strip(keep[0]))) keep.shift();
+  const d = keep.join(" ").replace(/[,.\s]+$/,"");
+  r.descripcion = d ? d.charAt(0).toUpperCase()+d.slice(1,70) : r.categoria;
+  return r;
+}
+
+/* ---------------- borrador ---------------- */
+let draft = null, matchDue = null, matchFix = null, userEdited = false;
+function fillSelect(sel, items, withEmpty){ sel.innerHTML = (withEmpty?'<option value="">—</option>':"") + items.map(v=>`<option>${v}</option>`).join(""); }
+fillSelect($("dCat"), CATS); fillSelect($("dMedio"), MEDIOS, true);
+function renderPeopleSelect(){ const sel=$("dPersona"), cur=sel.value; sel.innerHTML='<option value="">Nadie</option>'+state.people.map(p=>`<option>${esc(p.nombre)}</option>`).join(""); sel.value=cur; }
+function setTipo(t){ draft.tipo = t; for (const b of $("tipoSeg").children) b.setAttribute("aria-pressed", String(b.dataset.v===t)); $("dComp").disabled = t!=="gasto"; }
+function showDraft(r, said){
+  draft = {...r, texto:said}; userEdited = false;
+  $("dValor").value = r.valor ? r.valor.toLocaleString("es-CO") : "";
+  $("dFecha").value = r.fecha; $("dDesc").value = r.descripcion;
+  $("dCat").value = CATS.includes(r.categoria) ? r.categoria : "Otros";
+  $("dMedio").value = MEDIOS.includes(r.medio) ? r.medio : "";
+  $("dComp").checked = !!r.compartido; renderPeopleSelect(); $("dPersona").value = r.persona||"";
+  setTipo(r.tipo); updateMatch();
+  $("draft").hidden = false; $("draft").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth", block:"center"});
+}
+function readDraft(){
+  return {...draft, valor: +String($("dValor").value).replace(/[^\d]/g,"")||0, fecha:$("dFecha").value||today(), descripcion:$("dDesc").value.trim()||$("dCat").value,
+    categoria:$("dCat").value, medio:$("dMedio").value, compartido: draft.tipo==="gasto" && $("dComp").checked, persona:$("dPersona").value};
+}
+function updateMatch(){
+  const r = readDraft(), s = strip(r.descripcion+" "+(draft.texto||""));
+  matchDue = state.due.filter(d=>d.estado!=="pagado").find(d => strip(d.nombre).split(/[^a-z0-9]+/).filter(w=>w.length>3 && !["pago","tarjeta","minimo","cuota","mensual","hogar"].includes(w)).some(w=>s.includes(w)));
+  matchFix = null;
+  if (r.tipo==="ingreso" || r.tipo==="cobro"){
+    matchDue = null;
+    const mon = (r.fecha||today()).slice(0,7);
+    matchFix = state.fixed.filter(f => !fixReceived(f, mon) && !(f.omitidos||[]).includes(mon)).find(f =>
+      (f.persona && r.persona && f.persona===r.persona) ||
+      strip(f.nombre).split(/[^a-z0-9]+/).filter(w=>w.length>3 && !["ingreso","pago","mensual","gastos","compartidos","aporte","parte"].includes(w)).some(w=>s.includes(w)));
+  }
+  $("matchBox").hidden = !matchDue && !matchFix;
+  if (matchDue) $("matchText").textContent = `Marcar "${matchDue.nombre}" como pagado`;
+  if (matchFix) $("matchText").textContent = `Contarlo como "${matchFix.nombre}" de este mes`;
+}
+["dValor","dDesc","dCat","dMedio","dComp","dPersona","dFecha"].forEach(id=>$(id).addEventListener("input",()=>{userEdited=true; if(id==="dValor"){const n=+$("dValor").value.replace(/[^\d]/g,""); $("dValor").value = n? n.toLocaleString("es-CO"):"";} updateMatch();}));
+$("tipoSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; userEdited=true; setTipo(b.dataset.v); if(b.dataset.v==="cobro") $("dCat").value="Préstamos"; if(b.dataset.v==="ingreso") $("dCat").value="Ingresos"; if(b.dataset.v==="tarjeta") $("dCat").value="Tarjetas de crédito"; updateMatch(); });
+$("cancelBtn").onclick = () => { $("draft").hidden = true; draft = null; };
+
+/* ---------------- Claude para entender la frase ---------------- */
+let sample = null;
+async function refineWithClaude(said, local){
+  if (!sample) return;
+  $("aiNote").className = "note ai"; $("aiNote").textContent = "Claude está revisando…";
+  const prompt = `Eres un asistente que registra pagos en pesos colombianos (COP). Hoy es ${today()}.
+Frase dictada por el usuario: "${said}"
+Personas que le deben o comparten gastos: ${state.people.map(p=>p.nombre).join(", ")||"ninguna"}.
+Pagos pendientes conocidos: ${state.due.filter(d=>d.estado!=="pagado").map(d=>d.nombre).join("; ")||"ninguno"}.
+Responde SOLO con un objeto JSON con estas claves:
+{"valor": número entero en COP (ej. "45 mil" = 45000, "un palo" = 1000000, "20 lucas" = 20000),
+ "tipo": "gasto" | "tarjeta" (abono o pago a una tarjeta de crédito) | "cobro" (una persona le pagó lo que le debía) | "ingreso",
+ "categoria": una de ${JSON.stringify(CATS)},
+ "medio": una de ${JSON.stringify(MEDIOS)} o "" si no se dice (es la cuenta DESDE la que salió o a la que llegó el dinero, no la tarjeta que se paga),
+ "persona": nombre de la persona involucrada o "",
+ "compartido": true si es un gasto dividido a medias con esa persona,
+ "fecha": "AAAA-MM-DD",
+ "descripcion": texto corto y claro, máximo 6 palabras}`;
+  try{
+    const j = await sample.json(prompt, {modelTier:"quick"});
+    if (!draft || draft.texto !== said || userEdited) { $("aiNote").textContent=""; return; }
+    const r = {...local};
+    if (Number.isFinite(+j.valor) && +j.valor>0) r.valor = Math.round(+j.valor);
+    if (TIPOS[j.tipo]) r.tipo = j.tipo;
+    if (CATS.includes(j.categoria)) r.categoria = j.categoria;
+    if (MEDIOS.includes(j.medio) || j.medio==="") r.medio = j.medio || local.medio;
+    if (typeof j.persona==="string") r.persona = state.people.find(p=>strip(p.nombre)===strip(j.persona))?.nombre || "";
+    r.compartido = !!j.compartido && r.tipo==="gasto";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(j.fecha||"")) r.fecha = j.fecha;
+    if (typeof j.descripcion==="string" && j.descripcion.trim()) r.descripcion = j.descripcion.trim().slice(0,70);
+    showDraft(r, said);
+    $("aiNote").textContent = "Revisado por Claude";
+  }catch(e){
+    $("aiNote").className="note"; $("aiNote").textContent = e && e.code==="not_granted" ? "" : "Entendido sin Claude; revisa los datos.";
+    if (e && e.code==="not_granted") sample = null;
+  }
+}
+function handleSaid(){
+  const said = $("said").value.trim();
+  if (!said) { $("said").focus(); return; }
+  const local = parseLocal(said);
+  $("aiNote").textContent = "";
+  showDraft(local, said);
+  refineWithClaude(said, local);
+}
+$("parseBtn").onclick = handleSaid;
+$("said").addEventListener("keydown", e => { if (e.key==="Enter" && !e.shiftKey){ e.preventDefault(); handleSaid(); }});
+document.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => { $("said").value = b.dataset.ex; handleSaid(); });
+
+/* ---------------- voz ---------------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false;
+function micFallback(msg){ $("micHint").textContent = msg; $("said").focus(); }
+$("micBtn").onclick = () => {
+  if (!SR) return micFallback("Este navegador no reconoce voz aquí. Toca el cuadro y usa el micrófono de tu teclado (el ícono 🎤 junto a la barra espaciadora).");
+  if (listening && rec){ rec.stop(); return; }
+  try{
+    rec = new SR(); rec.lang = "es-CO"; rec.interimResults = true; rec.continuous = false;
+    let finalText = "";
+    rec.onstart = () => { listening = true; $("micBtn").classList.add("on"); $("micHint").textContent = "Te escucho… di el valor, en qué y con qué pagaste."; };
+    rec.onresult = ev => { let interim = ""; finalText = ""; for (const r of ev.results){ if (r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript; } $("said").value = (finalText+interim).trim(); };
+    rec.onerror = ev => { if (ev.error==="not-allowed"||ev.error==="service-not-allowed"||ev.error==="audio-capture") micFallback("No tengo permiso para el micrófono en esta página. Toca el cuadro y dicta con el micrófono del teclado; funciona igual."); else if (ev.error==="no-speech") $("micHint").textContent = "No te escuché. Toca el micrófono e inténtalo de nuevo."; };
+    rec.onend = () => { listening = false; $("micBtn").classList.remove("on"); if ($("said").value.trim() && finalText) handleSaid(); };
+    rec.start();
+  }catch(e){ micFallback("No pude abrir el micrófono. Usa el micrófono del teclado en el cuadro de texto."); }
+};
+
+/* ---------------- guardar ---------------- */
+async function addDoc(col, data){
+  if (db) { await db.collection(col).add(data); return; }
+  data.id = "m"+Date.now()+Math.random().toString(36).slice(2,6); localList(col).push(data); saveLocal(); render();
+}
+async function updDoc(col, id, data){
+  if (db) { await db.collection(col).doc(id).update(data); return; }
+  Object.assign(localList(col).find(x=>x.id===id)||{}, data); saveLocal(); render();
+}
+async function delDoc(col, id){
+  if (db) { await db.collection(col).doc(id).delete(); return; }
+  const l = localList(col), i = l.findIndex(x=>x.id===id); if (i>=0) l.splice(i,1); saveLocal(); render();
+}
+const COLS = {movimientos:"movs", compromisos:"due", personas:"people", ingresosFijos:"fixed"};
+const localList = col => state[COLS[col]];
+function saveLocal(){ try{ localStorage.setItem("libreta", JSON.stringify(state)); }catch(e){} }
+
+$("saveBtn").onclick = async () => {
+  const r = readDraft();
+  if (!r.valor){ $("dValor").focus(); $("aiNote").className="note"; $("aiNote").textContent="Falta el valor."; return; }
+  $("saveBtn").disabled = true;
+  try{
+    const fijoId = matchFix && !$("matchBox").hidden && $("dMatch").checked ? matchFix.id : "";
+    const dueId = matchDue && !matchFix && !$("matchBox").hidden && $("dMatch").checked ? matchDue.id : "";
+    const doc = {fijoId, dueId, fecha:r.fecha, descripcion:r.descripcion, categoria:r.categoria, medio:r.medio, valor:r.valor, tipo:r.tipo, persona:r.persona||"", compartido:!!r.compartido, texto:draft.texto||"", creado:Date.now()};
+    await addDoc("movimientos", doc);
+    if (matchDue && !matchFix && !$("matchBox").hidden && $("dMatch").checked) await updDoc("compromisos", matchDue.id, {estado:"pagado", pagadoEl:r.fecha});
+    $("draft").hidden = true; draft = null; $("said").value = "";
+    $("micHint").textContent = `Guardado: ${r.descripcion}, ${money(r.valor)}. Dime el siguiente.`;
+    viewMonth = r.fecha.slice(0,7); render();
+  }catch(e){ $("aiNote").className="note"; $("aiNote").textContent = "No se pudo guardar. Revisa tu conexión e inténtalo otra vez."; }
+  finally{ $("saveBtn").disabled = false; }
+};
+
+/* ---------------- pagos por vencer ---------------- */
+$("dueForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const valor = +$("nValor").value.replace(/[^\d]/g,"");
+  if (!$("nNombre").value.trim() || !valor) return;
+  await addDoc("compromisos", {nombre:$("nNombre").value.trim(), valor, vence:$("nFecha").value||"", estado:"pendiente", nota:""});
+  $("dueForm").reset();
+});
+$("nValor").addEventListener("input",()=>{const n=+$("nValor").value.replace(/[^\d]/g,""); $("nValor").value=n?n.toLocaleString("es-CO"):"";});
+
+/* ---------------- ingresos fijos ---------------- */
+const fixReceived = (f, mon) => state.movs.find(m => m.fijoId===f.id && (m.fecha||"").startsWith(mon));
+$("fixForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const valor = +$("fValor").value.replace(/[^\d]/g,"");
+  if (!$("fNombre").value.trim() || !valor) return;
+  await addDoc("ingresosFijos", {nombre:$("fNombre").value.trim(), valor, dia:+$("fDia").value||0, tipo:"propio", persona:"", omitidos:[]});
+  $("fixForm").reset();
+});
+$("fValor").addEventListener("input",()=>{const n=+$("fValor").value.replace(/[^\d]/g,""); $("fValor").value=n?n.toLocaleString("es-CO"):"";});
+let confirmFix = null, confirmDue = null;
+$("fixList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-fix]"); if (!b) return;
+  const f = state.fixed.find(x=>x.id===b.dataset.fix); if (!f) return;
+  const act = b.dataset.act, mon = viewMonth, om = f.omitidos||[];
+  if (act==="del" && confirmFix!==f.id){ confirmFix = f.id; render(); return; }
+  b.disabled = true;
+  try{
+    if (act==="got"){
+      const [y,m] = mon.split("-").map(Number), last = new Date(y,m,0).getDate();
+      const fecha = mon===today().slice(0,7) ? today() : `${mon}-${pad(Math.min(f.dia||1,last))}`;
+      await addDoc("movimientos", {fijoId:f.id, fecha, descripcion:f.nombre, categoria: f.tipo==="reembolso"?"Préstamos":"Ingresos", medio:f.medio||"", valor:f.valor, tipo: f.tipo==="reembolso"?"cobro":"ingreso", persona:f.persona||"", compartido:false, texto:"Ingreso fijo", creado:Date.now()});
+    }
+    if (act==="undo"){ const m = fixReceived(f, mon); if (m) await delDoc("movimientos", m.id); }
+    if (act==="skip") await updDoc("ingresosFijos", f.id, {omitidos:[...om, mon]});
+    if (act==="restore") await updDoc("ingresosFijos", f.id, {omitidos:om.filter(x=>x!==mon)});
+    if (act==="del"){ confirmFix = null; await delDoc("ingresosFijos", f.id); }
+  }catch(_){ b.disabled = false; }
+});
+
+/* ---------------- render ---------------- */
+const esc = s => String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const fmtDate = s => { if(!s) return "sin fecha"; const [y,m,d]=s.split("-"); return `${+d} ${MES[+m-1].slice(0,3)}`; };
+let openRow = null, confirmDel = null, lastBal = {ing:0,deu:0,gastos:0};
+
+function owed(p){
+  let v = +p.saldoInicial||0;
+  for (const m of state.movs){
+    if (m.persona!==p.nombre) continue;
+    if (m.tipo==="gasto" && m.compartido) v += m.valor/2;
+    if (m.tipo==="cobro") v -= m.valor;
+  }
+  return v;
+}
+function render(){
+  const [y,mo] = viewMonth.split("-");
+  $("monthLabel").textContent = MES[+mo-1]+" "+y;
+  const movs = state.movs.filter(m => (m.fecha||"").startsWith(viewMonth)).sort((a,b)=> (b.fecha||"").localeCompare(a.fecha||"") || (b.creado||0)-(a.creado||0));
+  const sum = t => movs.filter(m=>m.tipo===t).reduce((a,m)=>a+(+m.valor||0),0);
+  $("sGasto").textContent = money(sum("gasto"));
+  $("sTarj").textContent = money(sum("tarjeta"));
+  $("sIn").textContent = money(sum("ingreso")+sum("cobro"));
+
+  const byCat = {}; for (const m of movs) if (m.tipo==="gasto") byCat[m.categoria] = (byCat[m.categoria]||0)+(+m.valor||0);
+  const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]); const max = cats[0]?.[1]||1;
+  $("bars").innerHTML = cats.length ? cats.map(([c,v])=>`<div class="bar"><span>${esc(c)}</span><span class="num">${money(v)}</span><div class="track"><div class="fill" style="width:${Math.max(2,v/max*100)}%"></div></div></div>`).join("")
+    : `<div class="empty">Aún no hay gastos en ${MES[+mo-1]}. Dicta el primero arriba.</div>`;
+
+  const t = today();
+  let esperado = 0, recibido = 0;
+  $("fixList").innerHTML = state.fixed.length ? [...state.fixed].sort((a,b)=>(a.dia||99)-(b.dia||99)).map(f=>{
+    const got = fixReceived(f, viewMonth), off = (f.omitidos||[]).includes(viewMonth);
+    if (!off){ esperado += +f.valor||0; if (got) recibido += +got.valor||0; }
+    const day = f.dia ? `Llega el día ${f.dia}` : "Día por definir";
+    const pill = off ? `<span class="pill soon">Quitado este mes</span>` : got ? `<span class="pill ok">Recibido</span>` : (viewMonth===t.slice(0,7) && f.dia && +t.slice(8)>f.dia) ? `<span class="pill pend">Atrasado</span>` : `<span class="pill soon">Por recibir</span>`;
+    const btns = off ? `<button class="sbtn" data-fix="${f.id}" data-act="restore">Volver a contar</button>`
+      : got ? `<button class="sbtn" data-fix="${f.id}" data-act="undo">Deshacer</button>`
+      : `<button class="sbtn" data-fix="${f.id}" data-act="got">Lo recibí</button><button class="sbtn" data-fix="${f.id}" data-act="skip">Quitar este mes</button>`;
+    const del = `<button class="sbtn danger" data-fix="${f.id}" data-act="del">${confirmFix===f.id?"Sí, eliminar":"Eliminar"}</button>`;
+    return `<div class="row ${off?"off":""}"><span class="t">${esc(f.nombre)}</span><span class="amt num in">${money(f.valor)}</span><span class="s">${day}${f.tipo==="reembolso"?" · reembolso, ya tiene destino":""}</span><span class="acts">${pill}${btns}${del}</span></div>`;
+  }).join("") : `<div class="empty">No tienes ingresos fijos registrados.</div>`;
+  $("fixSum").innerHTML = state.fixed.length ? `Recibido <b class="num">${money(recibido)}</b> de <b class="num">${money(esperado)}</b> esperados en ${MES[+mo-1]}.` : "";
+
+  const due = [...state.due].sort((a,b)=> (a.estado==="pagado")-(b.estado==="pagado") || (a.vence||"9999").localeCompare(b.vence||"9999"));
+  $("dueList").innerHTML = due.length ? due.map(d=>{
+    const days = d.vence ? Math.round((new Date(d.vence+"T12:00")-new Date(t+"T12:00"))/864e5) : null;
+    const pill = d.estado==="pagado" ? `<span class="pill ok">Pagado</span>` : days===null ? `<span class="pill soon">Sin fecha</span>` : days<0 ? `<span class="pill pend">Vencido</span>` : days<=7 ? `<span class="pill pend">${days===0?"Hoy":days===1?"Mañana":"En "+days+" días"}</span>` : `<span class="pill soon">${fmtDate(d.vence)}</span>`;
+    return `<div class="row"><span class="t">${esc(d.nombre)}</span><span class="amt num">${money(d.valor)}</span><span class="s">${d.vence?"Vence "+fmtDate(d.vence):""}${d.nota?" · "+esc(d.nota):""}</span><span class="acts">${pill}<button class="sbtn" data-due="${d.id}">${d.estado==="pagado"?"Deshacer":"Pagado"}</button><button class="sbtn danger" data-due="${d.id}" data-act="del">${confirmDue===d.id?"Sí, quitar":"Quitar"}</button></span></div>`;
+  }).join("") : `<div class="empty">No hay pagos por vencer registrados.</div>`;
+
+  {
+    const L = [], row = (c,v,cls="",tag="") => L.push(`<tr class="${cls}"><td>${c}${tag?`<span class="tag">${tag}</span>`:""}</td><td class="${v<0?"neg":v>0&&!cls?"pos":""}">${v===null?"":(v<0?"−":"+")+money(Math.abs(v))}</td></tr>`);
+    let ing = 0;
+    L.push(`<tr class="h"><td colspan="2">Ingresos</td></tr>`);
+    for (const f of state.fixed){ if ((f.omitidos||[]).includes(viewMonth)) continue; const got = fixReceived(f, viewMonth); const v = got ? +got.valor : +f.valor; ing += v; row(esc(f.nombre), v, "", got?"recibido":"por recibir"); }
+    const otrosIn = movs.filter(m=>(m.tipo==="ingreso"||m.tipo==="cobro") && !m.fijoId).reduce((a,m)=>a+(+m.valor||0),0);
+    if (otrosIn){ ing += otrosIn; row("Otros ingresos registrados", otrosIn); }
+    if (!state.fixed.length && !otrosIn) L.push(`<tr><td colspan="2" class="note">Agrega tus ingresos fijos abajo.</td></tr>`);
+    row("Total ingresos", ing, "sub");
+    let deu = 0;
+    L.push(`<tr class="h"><td colspan="2">Deudas y pagos</td></tr>`);
+    for (const d of due){ deu += +d.valor||0; row(esc(d.nombre), -(+d.valor||0), "", d.estado==="pagado"?"pagado":"pendiente"); }
+    const extraTarj = movs.filter(m=>m.tipo==="tarjeta" && !m.dueId).reduce((a,m)=>a+(+m.valor||0),0);
+    if (extraTarj){ deu += extraTarj; row("Abonos extra a tarjetas", -extraTarj); }
+    row("Total deudas y pagos", -deu, "sub");
+    row("Te queda después de deudas", ing-deu, "total");
+    const gastos = movs.filter(m=>m.tipo==="gasto" && !m.dueId).reduce((a,m)=>a+(+m.valor||0),0);
+    L.push(`<tr class="h"><td colspan="2">Día a día</td></tr>`);
+    row("Gastos registrados este mes", -gastos);
+    row("Te queda libre", ing-deu-gastos, "total");
+    lastBal = {ing, deu, gastos};
+    $("ledger").innerHTML = L.join("");
+  }
+
+  $("owedList").innerHTML = state.people.length ? state.people.map(p=>{ const v = owed(p); return `<div class="row"><span class="t">${esc(p.nombre)}</span><span class="amt num ${v>0?"in":""}">${money(v)}</span><span class="s">${esc(p.nota||"")}</span></div>`; }).join("") : `<div class="empty">Nadie te debe por ahora.</div>`;
+
+  $("movList").innerHTML = movs.length ? movs.map(m=>{
+    const sign = (m.tipo==="ingreso"||m.tipo==="cobro") ? "+" : "−";
+    const open = openRow===m.id;
+    return `<button class="rowbtn" data-row="${m.id}" aria-expanded="${open}"><div class="row"><span class="t">${esc(m.descripcion)}</span><span class="amt num ${sign==="+"?"in":"out"}">${sign}${money(m.valor)}</span><span class="s">${fmtDate(m.fecha)} · ${TIPOS[m.tipo]||""} · ${esc(m.categoria)}${m.medio?" · "+esc(m.medio):""}${m.compartido?" · a medias con "+esc(m.persona):""}${m.tipo==="cobro"&&m.persona?" · "+esc(m.persona):""}</span>${open?`<span class="rowact"><span class="note" style="margin-right:auto">"${esc(m.texto||"")}"</span><span class="btn danger" role="button" tabindex="0" data-del="${m.id}">${confirmDel===m.id?"Sí, borrar":"Borrar"}</span></span>`:""}</div></button>`;
+  }).join("") : `<div class="empty">Sin movimientos en ${MES[+mo-1]}. Prueba con uno de los ejemplos de arriba.</div>`;
+}
+$("movList").addEventListener("click", async e => {
+  const del = e.target.closest("[data-del]");
+  if (del){ e.stopPropagation(); const id = del.dataset.del; if (confirmDel===id){ confirmDel=null; openRow=null; try{ await delDoc("movimientos", id);}catch(_){} } else { confirmDel=id; render(); } return; }
+  const row = e.target.closest("[data-row]"); if (!row) return;
+  openRow = openRow===row.dataset.row ? null : row.dataset.row; confirmDel = null; render();
+});
+$("dueList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-due]"); if (!b) return;
+  const d = state.due.find(x=>x.id===b.dataset.due); if (!d) return;
+  if (b.dataset.act==="del"){ if (confirmDue!==d.id){ confirmDue = d.id; render(); return; } confirmDue = null; b.disabled = true; try{ await delDoc("compromisos", d.id); }catch(_){ b.disabled=false; } return; }
+  b.disabled = true;
+  try{ await updDoc("compromisos", d.id, d.estado==="pagado" ? {estado:"pendiente"} : {estado:"pagado", pagadoEl:today()}); }catch(_){ b.disabled=false; }
+});
+$("prevM").onclick = () => { const [y,m]=viewMonth.split("-").map(Number); const d=new Date(y,m-2,1); viewMonth=iso(d).slice(0,7); render(); };
+$("nextM").onclick = () => { const [y,m]=viewMonth.split("-").map(Number); const d=new Date(y,m,1); viewMonth=iso(d).slice(0,7); render(); };
+
+/* ---------------- consejo ---------------- */
+$("adviceBtn").onclick = () => {
+  render();
+  const t = today(), mon = viewMonth, tips = [];
+  const daysTo = d => Math.round((new Date(d+"T12:00")-new Date(t+"T12:00"))/864e5);
+  const pend = state.due.filter(d=>d.estado!=="pagado");
+  const urg = pend.filter(d=>d.vence && daysTo(d.vence)<=7).sort((x,y)=>x.vence.localeCompare(y.vence));
+  const late = urg.filter(d=>daysTo(d.vence)<0);
+  if (late.length) tips.push(`Tienes ${late.length===1?"un pago vencido":late.length+" pagos vencidos"}: ${late.map(d=>d.nombre+" ("+money(d.valor)+")").join(", ")}. Págalo hoy para evitar intereses de mora y reportes.`);
+  const soon = urg.filter(d=>daysTo(d.vence)>=0);
+  if (soon.length){ const tot = soon.reduce((a,d)=>a+(+d.valor||0),0); tips.push(`En los próximos 7 días vencen ${money(tot)}: ${soon.map(d=>d.nombre+" el "+fmtDate(d.vence)).join(", ")}. Aparta esa plata ya y no la toques para otros gastos.`); }
+  const owing = state.people.map(p=>({p, v:owed(p)})).filter(x=>x.v>1000).sort((x,y)=>y.v-x.v);
+  if (owing.length){ const o = owing[0]; tips.push(`${o.p.nombre} te debe ${money(o.v)}.${soon.length?" Cóbrale antes del "+fmtDate(soon[0].vence)+" para cubrir ese pago.":" Acuerden una fecha fija cada mes para el pago."}`); }
+  const missing = state.fixed.filter(f=>!(f.omitidos||[]).includes(mon) && !fixReceived(f, mon));
+  if (missing.length && mon===t.slice(0,7)) tips.push(`Aún no marcas como recibido: ${missing.map(f=>f.nombre).join(", ")}. Cuenta solo con la plata que ya te llegó.`);
+  const libre = lastBal.ing - lastBal.deu - lastBal.gastos;
+  if (lastBal.ing && libre < 0) tips.push(`Este mes vas en rojo por ${money(-libre)}: tus deudas y gastos superan tus ingresos. Frena gastos que no sean esenciales y paga solo los mínimos hasta equilibrar.`);
+  else if (lastBal.ing && libre > 0) tips.push(`Te quedan libres ${money(libre)}. Una buena regla: ${money(libre*0.6)} como abono extra a la tarjeta con el interés más alto, ${money(libre*0.2)} a un fondo de emergencia y ${money(libre*0.2)} para gustos.`);
+  const movs = state.movs.filter(m=>(m.fecha||"").startsWith(mon) && m.tipo==="gasto");
+  const totG = movs.reduce((a,m)=>a+(+m.valor||0),0);
+  if (!movs.length) tips.push("No tienes gastos registrados este mes. Dicta cada gasto apenas lo hagas, aunque sea pequeño; en un mes vas a ver exactamente a dónde se va la plata.");
+  else {
+    const byCat = {}; movs.forEach(m=>byCat[m.categoria]=(byCat[m.categoria]||0)+(+m.valor||0));
+    const [cat, v] = Object.entries(byCat).sort((x,y)=>y[1]-x[1])[0];
+    if (v/totG > 0.3 && v > 150000) tips.push(`${cat} se lleva el ${Math.round(v/totG*100)}% de tus gastos (${money(v)}). Ponle un tope para el resto del mes, por ejemplo ${money(v*0.8)}.`);
+  }
+  const cards = pend.filter(d=>/tarjeta|rappi/i.test(d.nombre));
+  if (cards.length) tips.push("Con las tarjetas: paga siempre al menos el mínimo a tiempo y no hagas compras nuevas hasta bajar el saldo. Los avances en efectivo son los más caros; págalos primero.");
+  $("advice").textContent = tips.slice(0,5).map((x,i)=>`${i+1}. ${x}`).join("\n\n") || "Todo en orden. Sigue registrando tus pagos.";
+};
+
+/* ---------------- exportar ---------------- */
+function saveFile(name, text, type){ const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text],{type})); a.download = name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();}, 1000); }
+$("bakBtn").onclick = () => saveFile(`respaldo_libreta_${today()}.json`, JSON.stringify(state), "application/json");
+$("restFile").onchange = async e => { const f = e.target.files[0]; if (!f) return; try{ const d = JSON.parse(await f.text()); if (!Array.isArray(d.movs)) throw 0; Object.assign(state, d); saveLocal(); renderPeopleSelect(); render(); $("storeBanner").textContent = "Respaldo restaurado."; }catch(_){ $("storeBanner").textContent = "Ese archivo no es un respaldo de la libreta."; } e.target.value = ""; };
+$("csvBtn").onclick = async () => {
+  const q = v => `"${String(v??"").replace(/"/g,'""')}"`;
+  const rows = [["Fecha","Descripción","Categoría","Medio de pago","Valor COP","Tipo","Notas"]];
+  [...state.movs].sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||"")).forEach(m=>rows.push([m.fecha,m.descripcion,m.categoria,m.medio,m.valor,TIPOS[m.tipo]||m.tipo,(m.compartido?"A medias con "+m.persona:m.persona)||""]));
+  const csv = "﻿"+rows.map(r=>r.map(q).join(";")).join("\r\n");
+  saveFile(`pagos_${today()}.csv`, csv, "text/csv");
+};
+
+/* ---------------- arranque ---------------- */
+const SEED = {"movs":[],"due":[],"people":[],"fixed":[]};
+let loaded = false;
+try{ const st = JSON.parse(localStorage.getItem("libreta")||"null"); if (st && Array.isArray(st.movs)){ Object.assign(state, st); loaded = true; } }catch(e){}
+if (!loaded){ Object.assign(state, JSON.parse(JSON.stringify(SEED))); saveLocal(); }
+renderPeopleSelect(); render();
+$("storeBanner").hidden = false; $("storeBanner").textContent = loaded ? "Tus datos se guardan solo en este celular. Descarga un respaldo de vez en cuando." : "Primera vez: toca \"Restaurar respaldo\" abajo y elige respaldo_inicial.json para cargar tus datos. Se guardan solo en este celular.";
+})();
+</script>
+
+</body></html>
